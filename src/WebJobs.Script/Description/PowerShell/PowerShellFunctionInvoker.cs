@@ -173,6 +173,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
 
                     while (result.IsCompleted == false)
                     {
+                        System.Threading.Thread.Sleep(50);
                     }
 
                     // Clean up and remove module
