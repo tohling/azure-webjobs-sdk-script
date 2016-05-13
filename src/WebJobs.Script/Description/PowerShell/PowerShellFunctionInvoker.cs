@@ -309,6 +309,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             // do something when an object is written to the output stream
             var source = (PSDataCollection<PSObject>)sender;
             var msg = source[e.Index].ToString();
+            TraceWriter.Flush();
             TraceWriter.Info(msg);
         }
 
@@ -319,6 +320,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
         {
             var source = (PSDataCollection<ErrorRecord>)sender;
             var msg = GetErrorMessage(source[e.Index]);
+            TraceWriter.Flush();
             TraceWriter.Error(msg);
         }
 
