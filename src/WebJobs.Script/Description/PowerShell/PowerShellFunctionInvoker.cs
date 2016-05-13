@@ -145,20 +145,24 @@ namespace Microsoft.Azure.WebJobs.Script.Description
         private void InvokePowerShellScript()
         {
             InitialSessionState iss = InitialSessionState.CreateDefault();
+            _moduleFiles = GetModuleFilePaths();
 
             using (Runspace runspace = RunspaceFactory.CreateRunspace(iss))
             {
                 runspace.Open();
+                RunspaceInvoke runSpaceInvoker = new RunspaceInvoke(runspace);
+                runSpaceInvoker.Invoke("Set-ExecutionPolicy -Scope Process -ExecutionPolicy Unrestricted");
 
                 using (
                     System.Management.Automation.PowerShell powerShellInstance =
                         System.Management.Automation.PowerShell.Create())
                 {
                     powerShellInstance.Runspace = runspace;
-                    _moduleFiles = GetModuleFilePaths(_functionName);
+                    _moduleFiles = GetModuleFilePaths();
                     if (_moduleFiles.Any())
                     {
                         powerShellInstance.AddCommand("Import-Module").AddArgument(_moduleFiles);
+                        TraceWriter.Info(string.Format("Loaded modules: '{0}'", string.Join("\n", _moduleFiles)));
                     }
 
                     _script = GetScript();
@@ -310,7 +314,6 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             // do something when an object is written to the output stream
             var source = (PSDataCollection<PSObject>)sender;
             var msg = source[e.Index].ToString();
-            TraceWriter.Flush();
             TraceWriter.Info(msg);
         }
 
@@ -321,7 +324,6 @@ namespace Microsoft.Azure.WebJobs.Script.Description
         {
             var source = (PSDataCollection<ErrorRecord>)sender;
             var msg = GetErrorMessage(source[e.Index]);
-            TraceWriter.Flush();
             TraceWriter.Error(msg);
         }
 
@@ -408,16 +410,19 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             return script;
         }
 
-        private List<string> GetModuleFilePaths(string scriptFolder)
+        private List<string> GetModuleFilePaths()
         {
             List<string> modulePaths = new List<string>();
-            string currentDirectory = Path.Combine(_host.ScriptConfig.RootScriptPath, scriptFolder);
-            string moduleDirectory = Path.Combine(currentDirectory, PowerShellConstants.ModulesFolderName);
+            string functionFolder = Path.Combine(_host.ScriptConfig.RootScriptPath, _functionName);
+            string moduleDirectory = Path.Combine(functionFolder, PowerShellConstants.ModulesFolderName);
             if (Directory.Exists(moduleDirectory))
             {
-                modulePaths.AddRange(Directory.GetFiles(moduleDirectory, PowerShellConstants.ModulesManifestFileExtensionPattern));
-                modulePaths.AddRange(Directory.GetFiles(moduleDirectory, PowerShellConstants.ModulesScriptFileExtensionPattern));
-                modulePaths.AddRange(Directory.GetFiles(moduleDirectory, PowerShellConstants.ModulesBinaryFileExtensionPattern));
+                modulePaths.AddRange(Directory.GetFiles(moduleDirectory,
+                    PowerShellConstants.ModulesManifestFileExtensionPattern));
+                modulePaths.AddRange(Directory.GetFiles(moduleDirectory,
+                    PowerShellConstants.ModulesBinaryFileExtensionPattern));
+                modulePaths.AddRange(Directory.GetFiles(moduleDirectory,
+                    PowerShellConstants.ModulesScriptFileExtensionPattern));
             }
 
             return modulePaths;
