@@ -162,7 +162,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                     if (_moduleFiles.Any())
                     {
                         powerShellInstance.AddCommand("Import-Module").AddArgument(_moduleFiles);
-                        TraceWriter.Info(string.Format("Loaded modules: '{0}'", string.Join("\n", _moduleFiles)));
+                        LogLoadedModules();
                     }
 
                     _script = GetScript();
@@ -189,6 +189,30 @@ namespace Microsoft.Azure.WebJobs.Script.Description
 
                 runspace.Close();
             }
+        }
+
+        private void LogLoadedModules()
+        {
+            List<string> moduleRelativePaths = new List<string>();
+            foreach (string moduleFile in _moduleFiles)
+            {
+                string relativePath = GetRelativePath(moduleFile);
+                moduleRelativePaths.Add(relativePath);
+            }
+
+            if (moduleRelativePaths.Any())
+            {
+                TraceWriter.Info(string.Format("Loaded modules:{0}{1}", Environment.NewLine, string.Join(Environment.NewLine, moduleRelativePaths)));
+            }
+        }
+
+        private string GetRelativePath(string moduleFile)
+        {
+            string pattern = string.Format("^.*?(?=\\\\{0}\\\\)", _functionName);
+            MatchCollection matchCollection = Regex.Matches(moduleFile, pattern);
+            string newtoken = moduleFile.Replace(matchCollection[0].Value, string.Empty);
+            string relativePath = newtoken.Replace('\\', '/');
+            return relativePath;
         }
 
         private static void SetProcessEnvironmentVariables(IDictionary<string, string> envVariables)
@@ -223,7 +247,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             // process input bindings
             foreach (var inputBinding in _inputBindings)
             {
-                string filePath = System.IO.Path.Combine(functionInstanceOutputPath, inputBinding.Metadata.Name);
+                string filePath = Path.Combine(functionInstanceOutputPath, inputBinding.Metadata.Name);
                 using (FileStream stream = File.OpenWrite(filePath))
                 {
                     // If this is the trigger input, write it directly to the stream.
@@ -378,10 +402,8 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                 {
                     if (token.Contains(_functionName))
                     {
-                        string pattern = string.Format("^.*?(?=\\\\{0}\\\\)", _functionName);
-                        MatchCollection matchCollection = Regex.Matches(token, pattern);
-                        string newtoken = token.Replace(matchCollection[0].Value, string.Empty);
-                        newtokens[index++] = newtoken.Replace('\\', '/');
+                        string relativePath = GetRelativePath(token);
+                        newtokens[index++] = relativePath;
                     }
                     else if (token.Contains(PowerShellConstants.StackTraceScriptBlock))
                     {
