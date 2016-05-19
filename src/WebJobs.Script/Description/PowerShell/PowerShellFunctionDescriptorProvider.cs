@@ -7,9 +7,9 @@ using Microsoft.Azure.WebJobs.Script.Binding;
 
 namespace Microsoft.Azure.WebJobs.Script.Description
 {
-    public class PowerShellFunctionDescriptionProvider : FunctionDescriptorProvider
+    public class PowerShellFunctionDescriptorProvider : FunctionDescriptorProvider
     {
-        public PowerShellFunctionDescriptionProvider(ScriptHost host, ScriptHostConfiguration config)
+        public PowerShellFunctionDescriptorProvider(ScriptHost host, ScriptHostConfiguration config)
             : base(host, config)
         {
         }

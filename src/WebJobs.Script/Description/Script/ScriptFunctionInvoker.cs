@@ -100,7 +100,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                 }
             }
 
-            TraceWriter.Info(string.Format("Script Function started (Id={0})", invocationId));
+            TraceWriter.Info(string.Format("Function started (Id={0})", invocationId));
 
             string workingDirectory = Path.GetDirectoryName(_scriptFilePath);
             string functionInstanceOutputPath = Path.Combine(Path.GetTempPath(), "Functions", "Binding", invocationId);
@@ -128,7 +128,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             {
                 startedEvent.Success = false;
 
-                TraceWriter.Error(string.Format("Script Function completed (Failure, Id={0})", invocationId));
+                TraceWriter.Error(string.Format("Function completed (Failure, Id={0})", invocationId));
 
                 string error = process.StandardError.ReadToEnd();
                 throw new ApplicationException(error);
@@ -140,7 +140,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
 
             await ProcessOutputBindingsAsync(functionInstanceOutputPath, _outputBindings, input, binder, bindingData);
 
-            TraceWriter.Info(string.Format("Script Function completed (Success, Id={0})", invocationId));
+            TraceWriter.Info(string.Format("Function completed (Success, Id={0})", invocationId));
         }
 
         private void InitializeEnvironmentVariables(Dictionary<string, string> environmentVariables, string functionInstanceOutputPath, object input, Collection<FunctionBinding> outputBindings, ExecutionContext context)

@@ -21,11 +21,5 @@ namespace Microsoft.Azure.WebJobs.Script.Description.PowerShell
         // Output constants
         public const string CategoryInfoLabel = "CategoryInfo          :";
         public const string FullyQualifiedErrorIdLabel = "FullyQualifiedErrorId :";
-
-        // Environment variables constants
-        public const string ResEnvVarKey = "res";
-        public const string NameEnvVarKey = "REQ_QUERY_NAME";
-        public const string ProcessResEnvVar = "res";
-        public const string ProcessNameEnvVar = "name";
     }
 }

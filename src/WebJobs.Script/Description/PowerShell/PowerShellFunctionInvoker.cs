@@ -34,27 +34,22 @@ namespace Microsoft.Azure.WebJobs.Script.Description
         private string _script;
         private List<string> _moduleFiles;
         private Dictionary<string, string> _environmentVariables;
-        private Action _reloadScript;
-
-        private static readonly string[] WatchedFileTypes = { ".ps1", ".psm1", ".dll", ".psd1" };
 
         internal PowerShellFunctionInvoker(ScriptHost host, FunctionMetadata functionMetadata,
             Collection<FunctionBinding> inputBindings, Collection<FunctionBinding> outputBindings) : base(host, functionMetadata)
         {
             _host = host;
-            _scriptFilePath = functionMetadata.Source;
+            _scriptFilePath = functionMetadata.ScriptFile;
             _functionName = functionMetadata.Name;
             _inputBindings = inputBindings;
             _outputBindings = outputBindings;
             _metrics = host.ScriptConfig.HostConfig.GetService<IMetricsLogger>();
             _environmentVariables = new Dictionary<string, string>();
-            InitializeFileWatcherIfEnabled();
-            _reloadScript = ReloadScript;
-            _reloadScript = _reloadScript.Debounce();
         }
 
         public override async Task Invoke(object[] parameters)
         {
+            // TODO: Refactor common code for providers.
             object input = parameters[0];
             TraceWriter traceWriter = (TraceWriter)parameters[1];
             IBinderEx binder = (IBinderEx)parameters[2];
@@ -80,7 +75,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                     }
                 }
 
-                TraceWriter.Verbose(string.Format("PowerShell Function started (Id={0})", invocationId));
+                TraceWriter.Info(string.Format("Function started (Id={0})", invocationId));
 
                 string functionInstanceOutputPath = Path.Combine(Path.GetTempPath(), "Functions", "Binding",
                     invocationId);
@@ -95,12 +90,12 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                 InitializeEnvironmentVariables(_environmentVariables, functionInstanceOutputPath, input,
                     functionExecutionContext);
 
-                InvokePowerShellScript();
+                await InvokePowerShellScript();
 
                 await
                     ProcessOutputBindingsAsync(functionInstanceOutputPath, _outputBindings, input, binder, bindingData);
 
-                TraceWriter.Verbose(string.Format("PowerShell Function completed (Success, Id={0})", invocationId));
+                TraceWriter.Info(string.Format("Function completed (Success, Id={0})", invocationId));
             }
             catch (Exception exception)
             {
@@ -108,7 +103,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                 RuntimeException runtimeException = exception as RuntimeException;
                 if (runtimeException != null)
                 {
-                    TraceWriter.Verbose(string.Format(
+                    TraceWriter.Error(string.Format(
                         "Function runtime exception: {0}: {1}{2}{3}",
                         runtimeException.ErrorRecord.InvocationInfo.InvocationName,
                         runtimeException.Message,
@@ -116,40 +111,24 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                         runtimeException.ErrorRecord.InvocationInfo.PositionMessage));
                 }
 
-                TraceWriter.Verbose(string.Format("PowerShell Function completed (Failure, Id={0})", invocationId));
+                TraceWriter.Info(string.Format("Function completed (Failure, Id={0})", invocationId));
                 throw;
             }
             finally
             {
                 _metrics.EndEvent(startedEvent);
-                DeleteProcessEnvironmentVariables(_environmentVariables);
             }
         }
 
-        protected override void OnScriptFileChanged(object sender, FileSystemEventArgs e)
-        {
-            if (_script == null)
-            {
-                // we're not loaded yet, so nothing to reload
-                return;
-            }
-
-            // The ScriptHost is already monitoring for changes to function.json, so we skip those
-            string fileExtension = Path.GetExtension(e.Name);
-            if (WatchedFileTypes.Contains(fileExtension))
-            {
-                _reloadScript();
-            }
-        }
         // private void InvokePowerShellScript()
-        private void InvokePowerShellScript()
+        private async Task InvokePowerShellScript()
         {
             InitialSessionState iss = InitialSessionState.CreateDefault();
-            _moduleFiles = GetModuleFilePaths();
 
             using (Runspace runspace = RunspaceFactory.CreateRunspace(iss))
             {
                 runspace.Open();
+                SetRunspaceEnvironmentVariables(runspace, _environmentVariables);
                 RunspaceInvoke runSpaceInvoker = new RunspaceInvoke(runspace);
                 runSpaceInvoker.Invoke("Set-ExecutionPolicy -Scope Process -ExecutionPolicy Unrestricted");
 
@@ -174,17 +153,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                     powerShellInstance.Streams.Error.DataAdded += ErrorDataAdded;
 
                     IAsyncResult result = powerShellInstance.BeginInvoke<PSObject, PSObject>(null, outputCollection);
-
-                    while (result.IsCompleted == false)
-                    {
-                        System.Threading.Thread.Sleep(50);
-                    }
-
-                    // Clean up and remove module
-                    if (_moduleFiles.Any())
-                    {
-                        powerShellInstance.AddCommand("Remove-Module").AddArgument(_moduleFiles);
-                    }
+                    await Task.Factory.FromAsync<PSDataCollection<PSObject>>(result, powerShellInstance.EndInvoke);
                 }
 
                 runspace.Close();
@@ -202,7 +171,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
 
             if (moduleRelativePaths.Any())
             {
-                TraceWriter.Info(string.Format("Loaded modules:{0}{1}", Environment.NewLine, string.Join(Environment.NewLine, moduleRelativePaths)));
+                TraceWriter.Verbose(string.Format("Loaded modules:{0}{1}", Environment.NewLine, string.Join(Environment.NewLine, moduleRelativePaths)));
             }
         }
 
@@ -215,23 +184,11 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             return relativePath;
         }
 
-        private static void SetProcessEnvironmentVariables(IDictionary<string, string> envVariables)
+        private static void SetRunspaceEnvironmentVariables(Runspace runspace, IDictionary<string, string> envVariables)
         {
             foreach (var pair in envVariables)
             {
-                Environment.SetEnvironmentVariable(pair.Key, pair.Value, EnvironmentVariableTarget.Process);
-            }
-        }
-
-        private static void DeleteProcessEnvironmentVariables(IDictionary<string, string> envVariables)
-        {
-            foreach (var pair in envVariables)
-            {
-                var envSetting = Environment.GetEnvironmentVariable(pair.Key, EnvironmentVariableTarget.Process);
-                if (!string.IsNullOrEmpty(envSetting))
-                {
-                    Environment.SetEnvironmentVariable(pair.Key, null, EnvironmentVariableTarget.Process);
-                }
+                runspace.SessionStateProxy.SetVariable(pair.Key, pair.Value);
             }
         }
 
@@ -310,7 +267,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                         {
                             BindingContext bindingContext = new BindingContext
                             {
-                                Input = input,
+                                TriggerValue = input,
                                 Binder = binder,
                                 BindingData = bindingData,
                                 Value = stream
@@ -476,15 +433,6 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                     environmentVariables[varName] = header.Value.First();
                 }
             }
-
-            SetProcessEnvironmentVariables(environmentVariables);
-        }
-
-        private void ReloadScript()
-        {
-            TraceWriter.Verbose(string.Format(CultureInfo.InvariantCulture, "Script for function '{0}' changed. Reloading.", Metadata.Name));
-
-            _host.RestartEvent.Set();
         }
     }
 }
