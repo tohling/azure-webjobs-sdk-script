@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System;
+using Microsoft.Azure.WebJobs.Script.Settings;
 
 namespace Microsoft.Azure.WebJobs.Script.Host
 {
@@ -25,7 +26,9 @@ namespace Microsoft.Azure.WebJobs.Script.Host
                 RootScriptPath = rootPath
             };
 
-            ScriptHostManager scriptHostManager = new ScriptHostManager(config);
+            var settingsManager = ScriptSettingsManager.Instance;
+
+            ScriptHostManager scriptHostManager = new ScriptHostManager(config, settingsManager);
             scriptHostManager.RunAndBlock();
         }    
     }

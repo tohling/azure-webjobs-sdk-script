@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Timers;
 using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Azure.WebJobs.Script.Settings;
 
 namespace Microsoft.Azure.WebJobs.Script
 {
@@ -253,7 +254,7 @@ namespace Microsoft.Azure.WebJobs.Script
 
         internal static string GetInstanceId()
         {
-            string instanceId = System.Environment.GetEnvironmentVariable(EnvironmentSettingNames.AzureWebsiteInstanceId);
+            string instanceId = ScriptSettingsManager.Instance.GetEnvironmentSetting(EnvironmentSettingNames.AzureWebsiteInstanceId);
             if (string.IsNullOrEmpty(instanceId))
             {
                 instanceId = Environment.MachineName;

@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Script.Description;
 using Microsoft.Azure.WebJobs.Script.Diagnostics;
+using Microsoft.Azure.WebJobs.Script.Settings;
 using Microsoft.Azure.WebJobs.Script.WebHost.Models;
 
 namespace Microsoft.Azure.WebJobs.Script.WebHost.Diagnostics
@@ -27,10 +28,10 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Diagnostics
         // Default time between flushes in seconds (every 30 seconds)
         private const int DefaultFlushIntervalMS = 30 * 1000;
 
-        public MetricsEventManager(IEventGenerator generator, int functionActivityFlushIntervalSeconds, int metricsFlushIntervalMS = DefaultFlushIntervalMS)
+        public MetricsEventManager(ISettingsManager settingsManager, IEventGenerator generator, int functionActivityFlushIntervalSeconds, int metricsFlushIntervalMS = DefaultFlushIntervalMS)
         {
             // we read these in the ctor (not static ctor) since it can change on the fly
-            appName = GetNormalizedString(Environment.GetEnvironmentVariable(EnvironmentSettingNames.AzureWebsiteName)) ?? string.Empty;
+            appName = GetNormalizedString(settingsManager.GetEnvironmentSetting(EnvironmentSettingNames.AzureWebsiteName)) ?? string.Empty;
             subscriptionId = Utility.GetSubscriptionId() ?? string.Empty;
 
             _eventGenerator = generator;

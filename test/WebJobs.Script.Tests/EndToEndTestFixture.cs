@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Azure.WebJobs.Script.Settings;
 using Microsoft.Azure.WebJobs.Script.Tests.ApiHub;
 using Microsoft.ServiceBus;
 using Microsoft.WindowsAzure.Storage;
@@ -16,8 +17,11 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
 {
     public abstract class EndToEndTestFixture : IDisposable
     {
+        private readonly ISettingsManager _settingsManager;
+
         protected EndToEndTestFixture(string rootPath, string testId)
         {
+            _settingsManager = ScriptSettingsManager.Instance;
             FixtureId = testId;
             string connectionString = AmbientConnectionStringProvider.Instance.GetConnectionString(ConnectionStringNames.Storage);
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(connectionString);
@@ -40,7 +44,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
             // Clear the timer logs first, since one of the tests will
             // be checking them
             TestHelpers.ClearFunctionLogs("TimerTrigger");
-            Host = ScriptHost.Create(config);
+            Host = ScriptHost.Create(_settingsManager, config);
             Host.Start();
         }
 

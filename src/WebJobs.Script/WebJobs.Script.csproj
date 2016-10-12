@@ -430,6 +430,8 @@
     </Compile>
     <Compile Include="PropertyHelper.cs" />
     <Compile Include="ScriptConstants.cs" />
+    <Compile Include="Settings\ScriptSettingsManager.cs" />
+    <Compile Include="Settings\ISettingsManager.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>

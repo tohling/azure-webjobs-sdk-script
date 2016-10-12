@@ -4,9 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+using Microsoft.Azure.WebJobs.Script.Settings;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.WebJobs.Script.WebHost
@@ -24,7 +22,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost
             get
             {
                 // This is temporarily behind a feature flag. Once other clients are able to work with the new version, this should be removed.
-                if (string.Equals(Environment.GetEnvironmentVariable("AzureWebJobsEnableMultiKey"), "true", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(ScriptSettingsManager.Instance.GetEnvironmentSetting("AzureWebJobsEnableMultiKey"), "true", StringComparison.OrdinalIgnoreCase))
                 {
                     return _secretFormatters.Last();
                 }

@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Azure.WebJobs.Host.Timers;
+using Microsoft.Azure.WebJobs.Script.Settings;
 using Xunit;
 
 namespace Microsoft.Azure.WebJobs.Script.Tests
@@ -18,6 +19,8 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
     [Trait("Category", "E2E")]
     public class EndToEndTimeoutTests
     {
+        private static readonly ISettingsManager SettingsManager = ScriptSettingsManager.Instance;
+
         [Fact]
         public async Task TimeoutTest_SyncFunction_Node()
         {
@@ -154,7 +157,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
                 FunctionTimeout = timeout
             };
 
-            var scriptHostManager = new MockScriptHostManager(config);
+            var scriptHostManager = new MockScriptHostManager(config, SettingsManager);
             ThreadPool.QueueUserWorkItem((s) => scriptHostManager.RunAndBlock());
             await TestHelpers.Await(() => scriptHostManager.IsRunning);
 
@@ -185,7 +188,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
 
         private class MockScriptHostManager : ScriptHostManager
         {
-            public MockScriptHostManager(ScriptHostConfiguration config) : base(config)
+            public MockScriptHostManager(ScriptHostConfiguration config, ISettingsManager settingsManager) : base(config, settingsManager)
             {
             }
 

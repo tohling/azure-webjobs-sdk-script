@@ -7,6 +7,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Script.Binding;
 using Microsoft.Azure.WebJobs.Script.Description;
+using Microsoft.Azure.WebJobs.Script.Settings;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Xunit;
 
@@ -16,6 +17,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
     {
         private readonly FunctionDescriptorProvider _provider;
         private readonly ScriptHost _host;
+        private readonly ISettingsManager _settingsManager;
 
         public FunctionDescriptorProviderTests()
         {
@@ -24,8 +26,8 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
             {
                 RootScriptPath = rootPath
             };
-
-            _host = ScriptHost.Create(config);
+            _settingsManager = ScriptSettingsManager.Instance;
+            _host = ScriptHost.Create(_settingsManager, config);
             _provider = new TestDescriptorProvider(_host, config);
         }
 

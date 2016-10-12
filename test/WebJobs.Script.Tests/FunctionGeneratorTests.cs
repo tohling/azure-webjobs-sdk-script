@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Script.Config;
 using Microsoft.Azure.WebJobs.Script.Description;
+using Microsoft.Azure.WebJobs.Script.Settings;
 using Microsoft.Azure.WebJobs.Script.WebHost;
 using Xunit;
 
@@ -23,6 +24,8 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
     [Trait("Category", "E2E")]
     public class FunctionGeneratorTests
     {
+        private static readonly ISettingsManager SettingsManager = ScriptSettingsManager.Instance;
+
         [Fact]
         public async Task Generate_EndToEnd()
         {
@@ -227,7 +230,8 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
 
             string secretsPath = Path.Combine(Path.GetTempPath(), @"FunctionTests\Secrets");
             WebHostSettings webHostSettings = new WebHostSettings();
-            using (var manager = new WebScriptHostManager(config, new SecretManager(secretsPath), webHostSettings))
+
+            using (var manager = new WebScriptHostManager(config, new SecretManager(SettingsManager, secretsPath), SettingsManager, webHostSettings))
             {
                 Thread runLoopThread = new Thread(_ =>
                 {

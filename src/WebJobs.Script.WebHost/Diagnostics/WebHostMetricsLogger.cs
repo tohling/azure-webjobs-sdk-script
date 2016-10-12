@@ -3,6 +3,7 @@
 
 using System;
 using Microsoft.Azure.WebJobs.Script.Diagnostics;
+using Microsoft.Azure.WebJobs.Script.Settings;
 
 namespace Microsoft.Azure.WebJobs.Script.WebHost.Diagnostics
 {
@@ -11,8 +12,8 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Diagnostics
         private readonly MetricsEventManager _metricsEventManager;
         private bool disposed = false;
 
-        public WebHostMetricsLogger()
-            : this(new EventGenerator(), 5)
+        public WebHostMetricsLogger(ISettingsManager settingsManager)
+            : this(settingsManager, new EventGenerator(), 5)
         {
         }
 
@@ -21,9 +22,9 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Diagnostics
             _metricsEventManager = eventManager;
         }
 
-        public WebHostMetricsLogger(IEventGenerator eventGenerator, int metricEventIntervalInSeconds)
+        public WebHostMetricsLogger(ISettingsManager settingsManager, IEventGenerator eventGenerator, int metricEventIntervalInSeconds)
         {
-            _metricsEventManager = new MetricsEventManager(eventGenerator, metricEventIntervalInSeconds);
+            _metricsEventManager = new MetricsEventManager(settingsManager, eventGenerator, metricEventIntervalInSeconds);
         }
 
         public object BeginEvent(string eventName)

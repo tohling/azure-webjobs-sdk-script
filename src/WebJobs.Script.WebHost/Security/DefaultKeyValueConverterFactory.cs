@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Azure.WebJobs.Script.Settings;
 using static Microsoft.Azure.Web.DataProtection.Constants;
 
 namespace Microsoft.Azure.WebJobs.Script.WebHost
@@ -15,9 +16,11 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost
     {
         private bool _encryptionSupported;
         private static readonly PlaintextKeyValueConverter PlaintextValueConverter = new PlaintextKeyValueConverter(FileAccess.ReadWrite);
+        private static ISettingsManager _settingsManager;
 
-        public DefaultKeyValueConverterFactory()
+        public DefaultKeyValueConverterFactory(ISettingsManager settingsManager)
         {
+            _settingsManager = settingsManager;
             _encryptionSupported = IsEncryptionSupported();
         }
 
@@ -28,10 +31,10 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost
                 // We're temporarily placing encryption behind a feature toggle until
                 // other consumers (e.g. portal) are updated to work with it.
                 // TODO: Remove this
-                return string.Equals(Environment.GetEnvironmentVariable("AzureWebJobsEncryptionEnabled"), "true", StringComparison.OrdinalIgnoreCase);
+                return string.Equals(_settingsManager.GetEnvironmentSetting("AzureWebJobsEncryptionEnabled"), "true", StringComparison.OrdinalIgnoreCase);
             }
 
-            return Environment.GetEnvironmentVariable(AzureWebsiteLocalEncryptionKey) != null;
+            return _settingsManager.GetEnvironmentSetting(AzureWebsiteLocalEncryptionKey) != null;
         }
 
         public IKeyValueReader GetValueReader(Key key)

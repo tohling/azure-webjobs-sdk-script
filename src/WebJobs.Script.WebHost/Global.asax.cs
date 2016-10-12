@@ -3,6 +3,7 @@
 
 using System;
 using System.Web.Http;
+using Microsoft.Azure.WebJobs.Script.Settings;
 
 namespace Microsoft.Azure.WebJobs.Script.WebHost
 {
