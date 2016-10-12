@@ -5,18 +5,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Azure.WebJobs.Script.Config;
 using Microsoft.Azure.WebJobs.Script.WebHost;
 using Moq;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Microsoft.Azure.WebJobs.Script.Tests.Security
 {
     public class SecretManagerTests
     {
+        private ScriptSettingsManager _settingsManager = ScriptSettingsManager.Instance;
+
         [Fact]
         public void MergedSecrets_PrioritizesFunctionSecrets()
         {
@@ -63,7 +63,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Security
                 File.WriteAllText(Path.Combine(secretsPath, "testfunction.json"), functionSecrets);
 
                 IDictionary<string, string> result;
-                using (var secretManager = new SecretManager(secretsPath))
+                using (var secretManager = new SecretManager(_settingsManager, secretsPath))
                 {
                     result = secretManager.GetFunctionSecrets("testfunction", true);
                 }
@@ -87,7 +87,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Security
             var secretsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             try
             {
-                using (var variables = new TestScopedEnvironmentVariables("AzureWebJobsEnableMultiKey", "true"))
+                using (var variables = new TestScopedEnvironmentVariables(_settingsManager, "AzureWebJobsEnableMultiKey", "true"))
                 {
                     Directory.CreateDirectory(secretsPath);
                     string functionSecretsJson =
@@ -134,7 +134,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Security
             var secretsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             try
             {
-                using (var variables = new TestScopedEnvironmentVariables("AzureWebJobsEnableMultiKey", "true"))
+                using (var variables = new TestScopedEnvironmentVariables(_settingsManager, "AzureWebJobsEnableMultiKey", "true"))
                 {
                     Directory.CreateDirectory(secretsPath);
                     string hostSecretsJson =
@@ -188,7 +188,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Security
             var secretsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             try
             {
-                using (var variables = new TestScopedEnvironmentVariables("AzureWebJobsEnableMultiKey", "true"))
+                using (var variables = new TestScopedEnvironmentVariables(_settingsManager, "AzureWebJobsEnableMultiKey", "true"))
                 {
                     Mock<IKeyValueConverterFactory> mockValueConverterFactory = GetConverterFactoryMock(false);
 
@@ -221,7 +221,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Security
             var secretsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             try
             {
-                using (var variables = new TestScopedEnvironmentVariables("AzureWebJobsEnableMultiKey", "true"))
+                using (var variables = new TestScopedEnvironmentVariables(_settingsManager, "AzureWebJobsEnableMultiKey", "true"))
                 {
                     Mock<IKeyValueConverterFactory> mockValueConverterFactory = GetConverterFactoryMock(false);
 
@@ -250,7 +250,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Security
             var secretsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             try
             {
-                using (var variables = new TestScopedEnvironmentVariables("AzureWebJobsEnableMultiKey", "true"))
+                using (var variables = new TestScopedEnvironmentVariables(_settingsManager, "AzureWebJobsEnableMultiKey", "true"))
                 {
                     Mock<IKeyValueConverterFactory> mockValueConverterFactory = GetConverterFactoryMock(false);
 
@@ -282,7 +282,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Security
             var secretsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             try
             {
-                using (var variables = new TestScopedEnvironmentVariables("AzureWebJobsEnableMultiKey", "true"))
+                using (var variables = new TestScopedEnvironmentVariables(_settingsManager, "AzureWebJobsEnableMultiKey", "true"))
                 {
                     Mock<IKeyValueConverterFactory> mockValueConverterFactory = GetConverterFactoryMock(false);
 
@@ -314,7 +314,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Security
             var secretsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             try
             {
-                using (var variables = new TestScopedEnvironmentVariables("AzureWebJobsEnableMultiKey", "true"))
+                using (var variables = new TestScopedEnvironmentVariables(_settingsManager, "AzureWebJobsEnableMultiKey", "true"))
                 {
                     Mock<IKeyValueConverterFactory> mockValueConverterFactory = GetConverterFactoryMock(false);
 
@@ -350,7 +350,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Security
             string testSecret = "abcde0123456789abcde0123456789abcde0123456789";
             try
             {
-                using (var variables = new TestScopedEnvironmentVariables("AzureWebJobsEnableMultiKey", "true"))
+                using (var variables = new TestScopedEnvironmentVariables(_settingsManager, "AzureWebJobsEnableMultiKey", "true"))
                 {
                     Mock<IKeyValueConverterFactory> mockValueConverterFactory = GetConverterFactoryMock(false);
 
@@ -383,7 +383,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Security
             var secretsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             try
             {
-                using (var variables = new TestScopedEnvironmentVariables("AzureWebJobsEnableMultiKey", "true"))
+                using (var variables = new TestScopedEnvironmentVariables(_settingsManager, "AzureWebJobsEnableMultiKey", "true"))
                 {
                     Mock<IKeyValueConverterFactory> mockValueConverterFactory = GetConverterFactoryMock(false);
 
