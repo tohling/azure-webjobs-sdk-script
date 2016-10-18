@@ -1,14 +1,13 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
-using System;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Dependencies;
+using Microsoft.Azure.WebJobs.Script.Config;
 using Microsoft.Azure.WebJobs.Script.WebHost;
 using Microsoft.Azure.WebJobs.Script.WebHost.Handlers;
 using Moq;
@@ -18,12 +17,14 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
 {
     public class WebScriptHostHandlerTests
     {
+        private readonly ScriptSettingsManager _settingsManager;
         private HttpMessageInvoker _invoker;
         private Mock<WebScriptHostManager> _managerMock;
 
         public WebScriptHostHandlerTests()
         {
-            _managerMock = new Mock<WebScriptHostManager>(MockBehavior.Strict, new ScriptHostConfiguration(), new SecretManager(), new WebHostSettings());
+            _settingsManager = ScriptSettingsManager.Instance;
+            _managerMock = new Mock<WebScriptHostManager>(MockBehavior.Strict, new ScriptHostConfiguration(), new SecretManager(), _settingsManager, new WebHostSettings());
             _managerMock.SetupGet(p => p.Initialized).Returns(true);
             Mock<IDependencyResolver> mockResolver = new Mock<IDependencyResolver>(MockBehavior.Strict);
             mockResolver.Setup(p => p.GetService(typeof(WebScriptHostManager))).Returns(_managerMock.Object);

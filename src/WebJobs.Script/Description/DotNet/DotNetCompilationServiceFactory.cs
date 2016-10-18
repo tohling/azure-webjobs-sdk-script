@@ -2,12 +2,9 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Azure.WebJobs.Script.Config;
 using Microsoft.CodeAnalysis;
 
 namespace Microsoft.Azure.WebJobs.Script.Description
@@ -33,7 +30,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             {
                 if (_optimizationLevel == null)
                 {
-                    string releaseModeSetting = Environment.GetEnvironmentVariable(DotNetConstants.CompilationReleaseMode);
+                    string releaseModeSetting = ScriptSettingsManager.Instance.GetSetting(DotNetConstants.CompilationReleaseMode);
 
                     _optimizationLevel = string.Equals(releaseModeSetting, bool.TrueString, StringComparison.OrdinalIgnoreCase)
                         ? OptimizationLevel.Release
